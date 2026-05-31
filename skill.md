@@ -54,6 +54,7 @@ description: AutoPku - 自动获取PKU课程通知、完成作业、撰写笔记
 | "同步课程通知" / "看看有什么作业" | 同步所有课程通知和作业 |
 | "完成量子力学的第五次作业" | 完成指定课程作业（解析→解答→渲染→询问→提交） |
 | "给逻辑导论写笔记" | 从课件提取数学核心内容撰写笔记 |
+| "写马原课程论文" / "生成论文" | 生成课程论文（大纲→正文→渲染→询问） |
 
 ## 执行架构
 
@@ -97,6 +98,12 @@ else:
 引用: sub-skills/tasks/write-notes.md
   ↓
 执行笔记撰写流程
+
+用户: "写论文" / "生成课程论文"
+  ↓
+  引用: sub-skills/tasks/write-paper.md
+  ↓
+执行论文生成流程（大纲→正文→渲染→询问）
 ```
 
 ### 3. Agent 创建
@@ -195,6 +202,7 @@ chmod +x /tmp/pku3b_login.exp
 | 同步通知 | `tasks/sync-notices.md` | 获取作业/公告，生成摘要，并行处理课程 |
 | 完成作业 | `tasks/do-homework.md` | 解析PDF→解答→渲染→询问用户→提交 |
 | 撰写笔记 | `tasks/write-notes.md` | 从课件提取数学核心，去除噪声 |
+| 撰写论文 | `tasks/write-paper.md` | 从大纲到正文到编译，支持LaTeX/Word双模式 |
 
 ## Tool Skills 索引
 
