@@ -74,8 +74,9 @@ echo "" > /tmp/pku3b_login.exp
 ```bash
 # 作业
 /tmp/pku3b a ls --all-term          # 所有学期作业
+/tmp/pku3b a -f ls -a               # 强制刷新缓存列所有作业（含已完成）
 /tmp/pku3b a download <ID> -d <dir> # 下载附件
-/tmp/pku3b a submit <ID> <file>     # 提交作业
+/tmp/pku3b a submit <ID> <file>     # 提交作业（一次只接受单个文件）
 
 # 公告
 /tmp/pku3b ann ls                   # 列出公告
@@ -93,3 +94,6 @@ echo "" > /tmp/pku3b_login.exp
 - `pku3b init` 需要交互式输入，直接管道输入不工作
 - `pku3b auth status/login` 命令不存在，正确命令是 `pku3b init`
 - `pku3b s -d major show` 可能在某些账号返回 `302 Found`，作为可选步骤处理
+- **pku3b 有本地缓存**：提交作业后直接 `a ls` 看不到状态更新，必须 `a -f ls -a` 强制刷新才能确认提交成功
+- **`a submit` 一次只接受单个文件**：多文件（PDF + 多份源码）需先 `zip` 打包成一个压缩包再提交
+- 作业 ID 是 16 位 hex，从 `a ls` 输出末尾的灰色字段提取（解析时注意剥离 ANSI 颜色码，见 `data-parser.md`）
