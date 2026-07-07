@@ -163,6 +163,29 @@ sub-skills/
 
 ---
 
+## 阶段十二：speed-notes-kit 与一学期实战踩坑沉淀
+
+**PR:** speed-notes-kit + 笔记/作业流程增强
+
+在一整个学期的真实使用（概率统计 / 公共财政学 / 金融计量 / 凸优化等多门课讲义与作业）中沉淀：
+
+### 新增 `assets/speed-notes-kit/` 构建工具包
+- `preprocess.py` 渲染前自动修复 9+ 类 pandoc/XeLaTeX/ctex 已知坑（字面 Unicode 符号、`$` 后接数字、`_\mathbf` 下标、裸分隔线当 YAML、CJK 引号 smart 误判、数学被反引号包裹等）
+- 增强版 `callout.lua`（标题去重 + 数学标题安全渲染）、preamble/构建脚本/封面元数据、`STYLE_SPEC.template.md` 多 agent 共享写作规范模板、`extract_sources.py` 源料预提取
+
+### 笔记流程增强 (`write-notes.md`)
+- 新增 step 0：参考资料优先级（往年题 > 作业 > 课件）与期中/期末内容范围判定
+- 新增「笔记定位」分流：复习提纲 vs 零基础教材式讲义是两种产物
+- 渲染首选复用 kit；踩坑表扩充 9 行实测条目；验证改用 `pdfinfo`/`pdftotext`
+
+### 作业流程增强 (`do-homework.md` / `pku3b-setup.md`)
+- 多文件提交需 zip 打包（`a submit` 只接受单文件）；提交后 `a -f ls -a` 强刷缓存验证；LaTeX 渲染同名覆盖题目 PDF 警告；提交后清理编译副产物
+
+### PDF 读取增强 (`pdf-reader.md`)
+- 扫描版课件/往年题的 OCR 兜底（判定 + pytesseract 方案，中文 `chi_sim`）
+
+---
+
 ## 演进主线总结
 
 | 阶段 | 核心变化 |
