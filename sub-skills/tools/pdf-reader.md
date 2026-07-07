@@ -251,8 +251,59 @@ class PDFReader:
 | 内存占用 | 低 | 中等 |
 | 推荐场景 | 快速阅读、搜索 | 数据分析、表格提取 |
 
+## 扫描版 PDF：OCR 兜底
+
+课件、往年题回忆版常是**扫描件**（图片型 PDF，没有文本层），上述所有方法都会返回空文本。流程不能在这里卡死——先判定，再走 OCR。
+
+### 判定是否扫描件
+
+```python
+import fitz
+
+def is_scanned(pdf_path, sample_pages=3):
+    """前几页抽样：文本极少但有整页图片 → 判定为扫描件"""
+    doc = fitz.open(pdf_path)
+    n = min(sample_pages, doc.page_count)
+    text_len = sum(len(doc[i].get_text().strip()) for i in range(n))
+    has_images = any(doc[i].get_images() for i in range(n))
+    doc.close()
+    return text_len < 50 * n and has_images
+```
+
+### OCR 方案（pytesseract，改编自 Anthropic pdf skill，MIT）
+
+依赖：`brew install tesseract tesseract-lang`（中文需 `chi_sim` 语言包，`tesseract-lang` 含之；Linux 用 `apt install tesseract-ocr tesseract-ocr-chi-sim`），Python 侧 `uv add pymupdf pytesseract pillow`。
+
+```python
+import io
+import fitz
+import pytesseract
+from PIL import Image
+
+def ocr_pdf(pdf_path, lang="chi_sim+eng", dpi=200, pages=None):
+    """用 PyMuPDF 直接光栅化（无需 poppler），逐页 OCR"""
+    doc = fitz.open(pdf_path)
+    page_range = pages if pages is not None else range(doc.page_count)
+    out = []
+    for i in page_range:
+        pix = doc[i].get_pixmap(dpi=dpi)
+        img = Image.open(io.BytesIO(pix.tobytes("png")))
+        out.append(pytesseract.image_to_string(img, lang=lang))
+    doc.close()
+    return "\n\n".join(out)
+
+# 组合用法：先常规提取，空了再 OCR
+# text = ocr_pdf(pdf_path) if is_scanned(pdf_path) else read_pdf_fast(pdf_path)
+```
+
+注意：
+
+- OCR 结果的数学公式基本不可靠（上下标、希腊字母易错），扫描版课件里的公式以**人工核对**为前提使用，或在笔记流程中标注"来自 OCR，需核对"
+- `dpi=200` 是速度/精度平衡点；公式密集页可提到 300
+- `tesseract` 不存在时降级：报告用户该 PDF 为扫描件、需要安装 OCR 依赖，不要静默返回空文本
+
 ## 注意事项
 
-1. **扫描版PDF**: 上述方法只能提取文本层，扫描版PDF需要先OCR
+1. **扫描版PDF**: 上述常规方法只能提取文本层，扫描版需走上一节的 OCR 兜底
 2. **密码保护**: 需要先移除密码或使用 `fitz.open(password="xxx")`
 3. **大文件**: 超过100MB的PDF建议分页读取，避免内存溢出
