@@ -145,6 +145,8 @@ PYEOF
     --headless --print-to-pdf="{pdf_path}" "file://{html_path}"
 ```
 
+> **命名警告（LaTeX 路线）**：若改走 LaTeX 渲染，`xelatex X.tex` 的产物 PDF 与 `.tex` 同名——**别把 `.tex` 起成与题目 PDF 相同的名字**（如题目是 `HW8.pdf`，写 `HW8.tex` 编译会生成同名 `HW8.pdf` 把题目覆盖掉，只能重新下载）。解答源文件一律用独立名（如 `HW8_answer.tex`）。
+
 ### 6. 询问用户
 
 ```python
@@ -165,6 +167,29 @@ AskUserQuestion({
 /tmp/pku3b a ls --all-term | grep -i "{course}"
 /tmp/pku3b a submit {assignment_id} "{pdf_path}"
 ```
+
+**多文件提交**：`pku3b a submit` 一次只接受单个文件。需要同时交 PDF + 多份源码时，先 zip 打包再提交：
+
+```bash
+zip "{assignment}_submit.zip" "{pdf_path}" "P2.py" "P3.py"
+/tmp/pku3b a submit {assignment_id} "{assignment}_submit.zip"
+```
+
+**验证提交状态**：pku3b 有本地缓存，提交后直接 `a ls` 看不到状态变化，必须加 `-f` 强制刷新：
+
+```bash
+/tmp/pku3b a -f ls -a | grep -i "{course}"
+```
+
+### 8. 清理中间产物
+
+提交成功后清理编译副产物（`.aux`/`.log` 等），作业目录只留题目、解答源文件与最终 PDF：
+
+```bash
+rm -f *.aux *.log *.out *.toc *.fls *.fdb_latexmk
+```
+
+注意：zsh 默认没有 nullglob，glob 无匹配时在**展开阶段**就报错中断（`rm -f` 也救不了），还会连累 `&&` 链后续命令——脚本里清理时用 `bash -c '...'` 包一层更稳。
 
 ## 输出
 
