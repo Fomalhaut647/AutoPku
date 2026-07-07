@@ -1,0 +1,10 @@
+---
+title: "课程名 期末速通讲义"
+subtitle: "一句话副标题（如：以 N 套往年真题为纲，从零讲到会做题）"
+author: '作者名 `\\`{=latex} 个人主页或院系（可删）'
+date: "YYYY 年 M 月"
+---
+# 说明（拷贝后删本段，或留作注释参考）：
+# - author 里的 `\\`{=latex} 是 pandoc 的 raw-LaTeX 行内语法，输出 LaTeX 换行 \\，
+#   使作者名与第二行信息分两行显示；不需要两行就删掉它。
+# - 第 1 页封面由本文件的 title/subtitle/author/date 经 ctexrep \maketitle 生成，不来自任何 notes/*.md。

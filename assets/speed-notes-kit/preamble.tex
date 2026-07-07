@@ -1,0 +1,87 @@
+% ===== 速通讲义 主文档导言区（include-in-header，配 documentclass=ctexrep）=====
+% 来自 autopku speed-notes-kit。唯一需按课程改的是下面 fancyhead[L] 的页眉文字。
+
+% --- 代码/等宽字体（需覆盖希腊字母、数学关系符、箭头等，否则代码注释缺字；CJK 仍由 ctex 的 xeCJK 处理）---
+% Menlo 是 macOS 字体；Windows 换 Consolas，Linux 换 DejaVu Sans Mono
+\setmonofont{Menlo}[Scale=0.9]
+
+% --- 数学 ---
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+% --- 彩色提示框（callout.lua 生成 tcolorbox 环境）---
+\usepackage[most]{tcolorbox}
+
+% --- 页面尺寸 ---
+\usepackage{geometry}
+\geometry{a4paper, top=2.4cm, bottom=2.2cm, left=2.3cm, right=2.3cm, headheight=15pt}
+
+% --- 关闭所有自动章节编号（编号已手写进标题文本，避免双重编号）---
+\setcounter{secnumdepth}{-1}
+\setcounter{tocdepth}{1}
+
+% --- 章（每章）起始更紧凑一点的版式 ---
+\ctexset{
+  chapter = {
+    beforeskip = {6pt},
+    afterskip  = {18pt},
+    format     = {\raggedright\Large\bfseries},
+  },
+  section = {
+    format = {\large\bfseries\color{blue!30!black}},
+  },
+  subsection = {
+    format = {\normalsize\bfseries},
+  }
+}
+
+% --- 页眉页脚 ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\itshape 课程名 · 速通讲义}% ← 改成本课程名，如「概率统计 · 零基础速通讲义」
+\fancyhead[R]{\small\itshape\leftmark}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyfoot[C]{\small\thepage}%
+  \renewcommand{\headrulewidth}{0pt}%
+}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+
+% --- 段落与行距 ---
+\setlength{\parskip}{0.45em plus 0.12em minus 0.05em}
+\linespread{1.06}
+
+% --- 代码块用 listings（支持长行自动折行，无需 fvextra；讲义基本无代码，留作兜底）---
+\usepackage{listings}
+\lstset{
+  breaklines=true,
+  breakatwhitespace=false,
+  basicstyle=\small\ttfamily\upshape,
+  commentstyle=\ttfamily\upshape\color{green!38!black},
+  stringstyle=\ttfamily\upshape\color{purple!55!black},
+  keywordstyle=\ttfamily\upshape\color{blue!60!black},
+  identifierstyle=\ttfamily\upshape,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  extendedchars=true,
+  frame=single,
+  framesep=4pt,
+  rulecolor=\color{gray!55},
+  backgroundcolor=\color{gray!8},
+  xleftmargin=4pt,
+  xrightmargin=4pt,
+  aboveskip=6pt,
+  belowskip=6pt,
+}
+
+% --- 表格不要太挤 ---
+\renewcommand{\arraystretch}{1.18}
+
+% --- 让 boxed 公式不被页面切断时好看一些 ---
+\setlength{\fboxsep}{4pt}

@@ -1,0 +1,23 @@
+% ===== 往年题订正版 导言区（ctexart，单文档）=====
+% Menlo 是 macOS 字体；Windows 换 Consolas，Linux 换 DejaVu Sans Mono
+\setmonofont{Menlo}[Scale=0.9]
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage[most]{tcolorbox}
+\usepackage{geometry}
+\geometry{a4paper, top=2.3cm, bottom=2.2cm, left=2.3cm, right=2.3cm, headheight=15pt}
+
+% 关闭自动小节编号（编号手写进标题）
+\setcounter{secnumdepth}{-1}
+\setcounter{tocdepth}{2}
+
+\ctexset{
+  section    = {format = {\large\bfseries\color{blue!30!black}}},
+  subsection = {format = {\normalsize\bfseries}}
+}
+
+\setlength{\parskip}{0.4em plus 0.1em minus 0.05em}
+\linespread{1.05}
+\renewcommand{\arraystretch}{1.15}
+\setlength{\fboxsep}{4pt}
