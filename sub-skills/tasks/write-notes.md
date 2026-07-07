@@ -21,6 +21,14 @@ AskUserQuestion({
             "multiSelect": False
         },
         {
+            "question": "笔记定位：",
+            "options": [
+                {"label": "复习提纲（我学过，帮我唤起记忆）", "value": "review"},
+                {"label": "零基础讲义（没学过/忘光了，从零教会我）", "value": "zerobase"}
+            ],
+            "multiSelect": False
+        },
+        {
             "question": "笔记详细程度：",
             "options": [
                 {"label": "精简（只保留核心定义和定理）", "value": "minimal"},
@@ -43,8 +51,15 @@ AskUserQuestion({
 })
 ```
 
+**「笔记定位」判读**：用户话语里说「复习 / 我学过 / 速通复习」→ 复习提纲（定义+解题套路+范例+易错点，简明）；说「速通学习 / 没学过 / 零基础」→ 教材式讲义（每个概念按「直觉动机 → 严格定义逐符号解释 → 求解步骤 → 完整例题不跳步 → 易错点 → 真题精练」展开，篇幅可达几十页，宁详勿略）。两者是不同产物——复习提纲假设读者只需唤起记忆，零基础读者需要被"教会"。不确定就问；也可两份都给（讲义主用 + 提纲作复习卡）。
+
 ## 执行流程
 
+0. **定参考资料与内容范围（最先做）**:
+   - **参考资料优先级：往年题 > 作业题 > 课件**。目录里可能没有往年题，没有就不管往年题（退而用作业题+课件）。忽略学生本人作答 PDF。
+   - **分清期中还是期末**，据此定范围：① 期中笔记 → 只覆盖前半学期，不加后半内容；② 期末笔记且本课**只有期末没期中** → 覆盖整学期；③ 期末笔记且**既有期中又有期末** → 重点输出后半学期，前半学期只简略复习（不重复详写已考过的）。
+   - **判断知识点属前半/后半学期**：若目录有**期中往年题**，用它界定（期中考过的≈前半学期）。
+   - 范围错了笔记就白做（期中笔记混进后半内容、期末把已考过的前半重新详写都是浪费）。
 1. **发现课件**: 扫描 `lectures/` 目录，列出所有 PDF
 2. **用户确认**: 询问笔记范围和详细程度
 3. **并行处理**: 为每个 PDF 创建 agent，引用 `pdf-reader` 解析
@@ -193,6 +208,9 @@ graph TD
 | `> [!tip] 期中复习要点` | 每节结尾，总结必记结论 | 快速回顾用 |
 | `> [!example] 例题` | 典型例题（如用户选择了"添加例题"） | 巩固理解 |
 
+> [!warning] callout 标题别重复类型名
+> 若使用带类型标签的渲染器（如 `assets/speed-notes-kit/callout.lua`，会**自动**给框加彩色类型标签：技巧/直觉/易错/例），`[!type]` 后只写**具体标题或留空**，**别再写类型名本身**：写 `> [!warning] mid2024 第3题`（→「易错：mid2024 第3题」）或 `> [!warning]`（→「易错」），**别**写 `> [!warning] 易错（mid2024 第3题）`（→「易错：易错（…）」类型名重复，实测多 agent 写作时曾大面积中招）。详见 `assets/speed-notes-kit/STYLE_SPEC.template.md` §5。
+
 ### Mermaid 图使用规范
 
 在以下场景必须使用 mermaid 图，而非纯文字罗列：
@@ -239,6 +257,14 @@ README.md 是整份笔记的主文档，pandoc 渲染时以它为第一个输入
 
 笔记生成流程的最后一步自动执行。
 
+> **首选：直接复用 `assets/speed-notes-kit/`（已硬化的构建工具包）**
+> 不要从下面的零散说明手搓。该 kit（仓库根目录 `assets/speed-notes-kit/`）含权威版
+> `preprocess.py`（渲染前自动修复 9+ 类已知渲染坑）、`callout.lua`（增强版，标题去重 + 数学标题安全渲染）、
+> `preamble.tex`/`exam-preamble.tex`、`build.sh`/`build-exams.sh`、`metadata.yaml`、
+> `STYLE_SPEC.template.md`（多 agent 并行写作的共享规范模板）、`extract_sources.py`，
+> 以及 `README.md` 的新课上手流程。做法：把 kit 拷到 `<课程>/<讲义名>/.build/`，改几处 CONFIG，
+> 写 `notes/NN-*.md`，`bash .build/build.sh`。下面各小节是该 kit 背后的原理/踩坑说明，供排错时查阅。
+
 ### 核心思路
 
 **README.md 作为主文档入口，pandoc 接收多个 md 文件按序渲染，自动生成目录。** 不要先合并成一个大 md 再渲染——直接传多文件给 pandoc。
@@ -266,6 +292,7 @@ README.md 是整份笔记的主文档，pandoc 渲染时以它为第一个输入
      notes/README.md \
      notes/lec01_*.md notes/lec02_*.md ... notes/lec13_*.md \
      -o pdf/{course_name}课程笔记.pdf \
+     -f markdown+lists_without_preceding_blankline \
      --pdf-engine=xelatex \
      -V CJKmainfont="PingFang SC" \
      -V mainfont="PingFang SC" \
@@ -280,6 +307,7 @@ README.md 是整份笔记的主文档，pandoc 渲染时以它为第一个输入
    ```
    关键参数说明：
    - 第一个输入是 README.md（封面+概览），后续按文件名排序
+   - `-f markdown+lists_without_preceding_blankline` 让紧跟在 callout 标题/引导句后面（无空行）的列表仍被识别为列表（Obsidian/GFM 书写习惯），否则整块被压成一段文字
    - `--toc` 自动从所有文件的标题生成目录
    - `--top-level-division=chapter` 让每个文件的 h1 成为章，自动分页
    - `-V documentclass=report` 支持 chapter 级别
@@ -287,12 +315,12 @@ README.md 是整份笔记的主文档，pandoc 渲染时以它为第一个输入
 
 4. **验证输出**：
    ```bash
-   # 检查页数（macOS）
-   mdls -name kMDItemNumberOfPages pdf/{course_name}课程笔记.pdf
-   # 检查首页有文本
-   strings pdf/{course_name}课程笔记.pdf | head -20
+   # 检查页数（pdfinfo 属 poppler；macOS 的 mdls 对新建 PDF 常返回 null，别依赖它）
+   pdfinfo pdf/{course_name}课程笔记.pdf | grep Pages
+   # 抽取文本检查：无 \boxed/\frac 等 LaTeX 残渣、无大面积缺字
+   pdftotext pdf/{course_name}课程笔记.pdf - | head -40
    ```
-   页数必须 > 0，strings 输出必须包含实际文本。
+   页数必须 > 0，抽出的文本必须是正常正文。
 
 ### Callout Lua Filter
 
@@ -309,10 +337,12 @@ local callout_config = {
   example = {color = "violet!70!black", icon = "[EX]"},
 }
 
-local function escape_latex(s)
-  local r = s:gsub("\\", "\\textbackslash{}")
-  r = r:gsub("([&%%#_$^{}~])", "\\%1")
-  return r
+-- 用 pandoc 的 LaTeX writer 渲染标题 inlines：纯文本自动转义，行内数学保留为 \(...\)
+-- （勿用手写 escape_latex：会把标题里的 $\mathbf{x}$ 等数学转义成字面乱码）
+local function render_title(inlines)
+  local doc = pandoc.Pandoc({pandoc.Plain(inlines)})
+  local s = pandoc.write(doc, "latex")
+  return s:gsub("%s+$", "")
 end
 
 function BlockQuote(el)
@@ -364,12 +394,12 @@ function BlockQuote(el)
     end
   end
 
-  local title = pandoc.utils.stringify(title_inlines)
+  local title = render_title(title_inlines)
   if not title or title == "" then title = ctype end
 
   local latex_begin = string.format(
     "\\begin{tcolorbox}[colback=%s!5!white, colframe=%s, left=2mm, right=2mm, top=1mm, bottom=1mm, boxrule=0.4mm, arc=1.5mm, title={%s %s}]",
-    cfg.color, cfg.color, cfg.icon, escape_latex(title)
+    cfg.color, cfg.color, cfg.icon, title
   )
 
   local result = {pandoc.RawBlock("latex", latex_begin)}
@@ -428,11 +458,22 @@ typst compile pdf/_combined.typ pdf/{course_name}课程笔记.pdf
 | 问题 | 原因 | 解决 |
 |------|------|------|
 | **Callout 正文丢失或重复** | 旧 filter 把 `> [!note] 标题\n> 正文` 的第一整段全部当作 tcolorbox `title`，导致正文被吞或重复 | 在 Lua filter 中通过 `tag_idx` + `SoftBreak` 精确定位，切分 `title_inlines` 和 `body_inlines` |
-| **tcolorbox title 编译报错（`Misplaced alignment tab character &`）** | callout 标题中含 `& $ % # _ ^ { } ~ \` 等特殊字符时，直接注入 LaTeX title 会报错 | 在 Lua filter 中增加 `escape_latex()` 函数，对 title 进行转义 |
-| **xelatex 西文符号缺失（`≠ μ` 等 warning）** | xelatex 默认西文 fallback 到 Latin Modern，该字体不支持部分 Unicode 数学符号 | 增加 `-V mainfont="PingFang SC"`（或 Songti/Heiti），让西文也使用支持 Unicode 的系统字体 |
+| **tcolorbox title 编译报错（`Misplaced alignment tab character &`）** | callout 标题中含 `& $ % # _ ^ { } ~ \` 等特殊字符时，直接注入 LaTeX title 会报错 | 用 `pandoc.write(pandoc.Pandoc({pandoc.Plain(title_inlines)}), "latex")` 渲染 title：纯文本自动转义、行内数学保留为 `\(...\)` |
+| **callout 标题含数学公式渲染成乱码（`f(\{}mathbf{x})...`）** | 手写 `escape_latex()` 不区分文本与数学，把标题里的 `$\mathbf{x}\|_1$` 等整体转义成字面字符 | 同上：弃用手写转义，改用 pandoc LaTeX writer 渲染 title inlines |
+| **下标/上标直接接字体命令编译失败（`Missing { inserted`）** | xelatex + unicode-math 下 `\iota_\mathcal{B}`、`\nabla_\mathbf{x}` 这类 `_\cmd{...}` 写法报错 | 渲染前正则修复：`([_^])\\(mathcal\|mathbf\|mathbb\|...)\{([^{}]*)\}` → `\1{\\\2{\3}}`；写作规范里直接要求 `_{\mathbf{x}}` |
+| **闭合 `$` 后紧跟数字使数学段失效** | pandoc 规定闭合 `$` 后接数字则不解析为数学，`$\approx$0.91` 会把后文吞进数学或裸露源码 | 把数字写进数学段 `$\approx 0.91$`；预处理兜底（`preprocess.py` 的 `fix_dollar_digit`） |
+| **数学段 `$...$` 内侧紧贴空格不被识别（`$= $`、`$ +x$`）** | pandoc 要求开 `$` 后紧跟非空格、闭 `$` 前是非空格，否则整段当字面文本，`\cdot` 等宏漏成缺字 | 预处理剥掉数学段内侧前后空格（LaTeX 本就忽略数学边缘空格，不改语义） |
+| **正文裸 `---`/`***`/`___` 分隔线报 YAML 解析错误** | pandoc 把非 frontmatter 的独行分隔线当 YAML metadata 块解析（含 callout 内 `> ---`） | 渲染前删掉所有非 frontmatter 分隔线（`> ---` 降级为 `>` 保 blockquote 连续） |
+| **行内数学被反引号包裹后裸露成源码** | 多 agent 写作时误把 `$...$` 包进反引号，pandoc 当字面代码原样输出 | 预处理拆掉数学 span 外层反引号（`preprocess.py` 的 `strip_math_backticks`）；写作规范禁止反引号包数学 |
+| **CJK 字后的 ASCII 双引号 `"` 全渲染成右引号 ”** | pandoc `smart` 扩展判开/闭看前一字符，CJK 字后的 `"` 一律判成闭引号 → `看"老"` 变 `看''老''` | 渲染前把正文区 ASCII `"` 按行内交替确定性转成中文弯引号 `“`/`”`；**勿**用 `-f markdown-smart` 关 smart（会连累 `--`/`...`） |
+| **callout / 引导句下紧跟的列表被压成一整段** | pandoc 默认关闭 `lists_without_preceding_blankline` 扩展：列表与上一行间无空行时被当段落"懒续行" | pandoc 加 `-f markdown+lists_without_preceding_blankline`；勿改用 `-f gfm`（会丢数学等扩展） |
+| **★(U+2605)、−(U+2212) 等字面符号缺字** | 正文与数学字体（Latin Modern / latinmodern-math）均缺这些字形 | 高频标记改 markdown 加粗；U+2212 映射为 `-`（**别**把区间用的 en-dash `–` 也映射成数学减号） |
+| **xelatex 西文符号缺失（`≠ μ` 等 warning）** | xelatex 默认西文 fallback 到 Latin Modern，该字体不支持部分 Unicode 数学符号 | 增加 `-V mainfont="PingFang SC"`（或 Songti/Heiti），让西文也使用支持 Unicode 的系统字体；根治法是正文不打字面符号、全走 `$...$`（预处理自动转换） |
 | **emoji 图标显示为空白方框** | tcolorbox title 中的 💡 📝 ⚠️ 等 emoji 在默认 LaTeX 字体中缺失 | 将 icon 替换为纯文字 `[TIP]` `[NOTE]` `[WARN]` `[EX]`，保证跨平台稳定 |
 | **lualatex 无 warning，但 chapter 分页略有不同** | lualatex 字体回退更完善，但 `--top-level-division=chapter` 与 xelatex 的换页行为存在微小差异 | 追求零 warning 时用 lualatex；需要与历史输出完全一致时用 xelatex |
 | **mermaid 图在 PDF 中无法渲染** | pandoc → LaTeX 和 typst 都不原生支持 mermaid 语法 | 当前保留为纯文本代码块；如需真正渲染，需额外使用 mermaid-cli 预先生成图片再插入 |
+
+> 上表中「预处理」类修复已全部固化在 `assets/speed-notes-kit/preprocess.py`，增强版 callout filter 在 `assets/speed-notes-kit/callout.lua`——直接复用 kit 即可，不必逐条手工打补丁。
 
 ### README.md 模板
 
