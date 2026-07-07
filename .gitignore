@@ -9,6 +9,9 @@
 !/sub-skills/
 !/sub-skills/**/
 !/sub-skills/**/*
+!/assets/
+!/assets/**/
+!/assets/**/*
 !/codex/
 !/codex/**/
 !/codex/**/*
